@@ -1,7 +1,11 @@
 ﻿using LojaDoSeuManoel.Application.DTOs;
-using LojaDoSeuManoel.Domain.Entities; 
+using LojaDoSeuManoel.Domain.Entities;
 using LojaDoSeuManoel.Domain.Services;
 using LojaDoSeuManoel.Domain.ValueObjects;
+using LojaDoSeuManoel.Infrastructure.Data;
+using LojaDoSeuManoel.Infrastructure.Data.Entities;
+using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -11,31 +15,69 @@ namespace LojaDoSeuManoel.Application.Services;
 public class PackingService : IPackingService
 {
     private readonly AlgoritmoEmpacotamento _algoritmoEmpacotamento;
+    private readonly AppDbContext _dbContext;
 
-    // O AlgoritmoEmpacotamento será injetado aqui (veremos Injeção de Dependência depois)
-    // Por enquanto, vamos instanciar diretamente para simplificar o exemplo inicial.
-    public PackingService() // Mais tarde, injetaremos: public PackingService(AlgoritmoEmpacotamento algoritmo)
+    public PackingService(AppDbContext dbContext)
     {
-        _algoritmoEmpacotamento = new AlgoritmoEmpacotamento();
+        _dbContext = dbContext;
+        
+        var tiposDeCaixaDomain = _dbContext.TiposDeCaixa
+            .Select(tc => new DefinicaoCaixa(tc.Nome, new Dimensoes(tc.AlturaCm, tc.LarguraCm, tc.ComprimentoCm)))
+            .ToList();
+
+        _algoritmoEmpacotamento = new AlgoritmoEmpacotamento(tiposDeCaixaDomain);
     }
 
     public async Task<List<PedidoProcessadoDto>> ProcessarPedidosAsync(List<PedidoRequestDto> pedidosDto)
     {
-        var resultadosFinais = new List<PedidoProcessadoDto>();
+        var resultadosFinaisDto = new List<PedidoProcessadoDto>();
 
         foreach (var pedidoDto in pedidosDto)
         {
-            // 1. Mapear Produtos DTO para Entidades de Domínio Produto
             var produtosDoPedidoDomain = pedidoDto.Produtos.Select(pDto =>
                 new Produto(
                     new Dimensoes(pDto.Altura, pDto.Largura, pDto.Comprimento),
                     pDto.ProdutoId
                 )).ToList();
 
-            // 2. Chamar o algoritmo de empacotamento do domínio
             List<CaixaEmbalada> caixasEmbaladasDomain = _algoritmoEmpacotamento.EmbalarPedido(produtosDoPedidoDomain);
 
-            // 3. Mapear o resultado (CaixasEmbaladas do Domínio) para DTOs de resposta
+            var pedidoPersistencia = new PedidoProcessadoPersistencia
+            {
+                Id = Guid.NewGuid(),
+                PedidoOriginalId = pedidoDto.PedidoId,
+                DataRecepcao = DateTime.UtcNow
+            };
+
+            foreach (var caixaDomain in caixasEmbaladasDomain)
+            {
+                var caixaUtilizadaPersistencia = new CaixaUtilizadaPersistencia
+                {
+                    Id = Guid.NewGuid(),
+                    PedidoProcessadoId = pedidoPersistencia.Id,
+                    NomeCaixa = caixaDomain.TipoCaixaUsada.Nome,
+                    AlturaCaixaCm = caixaDomain.TipoCaixaUsada.Dimensoes.AlturaCm,
+                    LarguraCaixaCm = caixaDomain.TipoCaixaUsada.Dimensoes.LarguraCm,
+                    ComprimentoCaixaCm = caixaDomain.TipoCaixaUsada.Dimensoes.ComprimentoCm,
+                };
+
+                foreach (var produtoDomain in caixaDomain.Produtos)
+                {
+                    caixaUtilizadaPersistencia.ProdutosNaCaixa.Add(new ProdutoEmCaixaPersistencia
+                    {
+                        Id = Guid.NewGuid(),
+                        CaixaUtilizadaId = caixaUtilizadaPersistencia.Id,
+                        ProdutoOriginalId = produtoDomain.ProdutoId,
+                        AlturaCm = produtoDomain.Dimensoes.AlturaCm,
+                        LarguraCm = produtoDomain.Dimensoes.LarguraCm,
+                        ComprimentoCm = produtoDomain.Dimensoes.ComprimentoCm
+                    });
+                }
+                pedidoPersistencia.CaixasUtilizadas.Add(caixaUtilizadaPersistencia);
+            }
+
+            _dbContext.PedidosProcessados.Add(pedidoPersistencia);
+
             var pedidoProcessadoResultadoDto = new PedidoProcessadoDto
             {
                 PedidoId = pedidoDto.PedidoId,
@@ -54,12 +96,11 @@ public class PackingService : IPackingService
                     }).ToList()
                 }).ToList()
             };
-            resultadosFinais.Add(pedidoProcessadoResultadoDto);
+            resultadosFinaisDto.Add(pedidoProcessadoResultadoDto);
         }
 
-        // Simula uma operação assíncrona, comum em I/O (como salvar no banco)
-        // No nosso caso, o processamento é todo em memória, mas é boa prática usar async/await
-        // se houver qualquer chance de operações demoradas ou I/O.
-        return await Task.FromResult(resultadosFinais);
+        await _dbContext.SaveChangesAsync();
+
+        return resultadosFinaisDto;
     }
 }

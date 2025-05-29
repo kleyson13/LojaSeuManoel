@@ -13,7 +13,6 @@ public class DefinicaoCaixa
         Dimensoes = dimensoes;
     }
 
-    // Verifica se um produto (com suas possíveis rotações) cabe nesta definição de caixa
     public bool PodeConterProduto(Produto produto)
     {
         foreach (var rotacaoProduto in produto.Dimensoes.ObterRotacoes())

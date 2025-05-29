@@ -18,8 +18,6 @@ public class Dimensoes
         ComprimentoCm = comprimentoCm;
     }
 
-    // Método para verificar se estas dimensões cabem em outras (da caixa)
-    // Não considera rotação aqui, a rotação será tratada antes de chamar este
     public bool CabeEm(Dimensoes dimensoesExternas)
     {
         return AlturaCm <= dimensoesExternas.AlturaCm &&
@@ -27,7 +25,6 @@ public class Dimensoes
                ComprimentoCm <= dimensoesExternas.ComprimentoCm;
     }
 
-    // Retorna todas as 6 possíveis rotações desta dimensão
     public IEnumerable<Dimensoes> ObterRotacoes()
     {
         yield return this; // Original
@@ -38,7 +35,7 @@ public class Dimensoes
         yield return new Dimensoes(ComprimentoCm, LarguraCm, AlturaCm);
     }
 
-    public override string ToString() // Útil para debug
+    public override string ToString()
     {
         return $"A:{AlturaCm} L:{LarguraCm} C:{ComprimentoCm}";
     }
