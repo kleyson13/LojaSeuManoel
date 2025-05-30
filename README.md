@@ -16,10 +16,10 @@ Este projeto é uma solução para o desafio técnico "Loja do Seu Manoel", que 
 - [Pré-requisitos](#pré-requisitos)
 - [Como Rodar a Aplicação (Método Recomendado)](#como-rodar-a-aplicação-método-recomendado-com-docker)
 - [Como Usar a API](#como-usar-a-api)
-    - [Autenticação](#autenticação)
-    - [Endpoint de Processamento](#endpoint-de-processamento)
-    - [Exemplo de Requisição (JSON)](#exemplo-de-requisição-json)
-    - [Exemplo de Resposta (JSON)](#exemplo-de-resposta-json)
+  - [Autenticação](#autenticação)
+  - [Endpoint de Processamento](#endpoint-de-processamento)
+  - [Exemplo de Requisição (JSON)](#exemplo-de-requisição-json)
+  - [Exemplo de Resposta (JSON)](#exemplo-de-resposta-json)
 - [Testes](#testes)
 - [Estrutura do Projeto](#estrutura-do-projeto)
 - [Autor](#autor)
@@ -27,9 +27,10 @@ Este projeto é uma solução para o desafio técnico "Loja do Seu Manoel", que 
 ## Sobre o Projeto
 
 Seu Manoel, dono de uma loja de jogos online, precisa automatizar a embalagem de seus pedidos. Esta API resolve o problema calculando, para cada pedido, quais das caixas disponíveis devem ser usadas e quais produtos devem ser colocados em cada uma. As caixas disponíveis são:
-* **Caixa 1:** 30cm (Altura) x 40cm (Largura) x 80cm (Comprimento)
-* **Caixa 2:** 80cm (Altura) x 50cm (Largura) x 40cm (Comprimento)
-* **Caixa 3:** 50cm (Altura) x 80cm (Largura) x 60cm (Comprimento)
+
+- **Caixa 1:** 30cm (Altura) x 40cm (Largura) x 80cm (Comprimento)
+- **Caixa 2:** 80cm (Altura) x 50cm (Largura) x 40cm (Comprimento)
+- **Caixa 3:** 50cm (Altura) x 80cm (Largura) x 60cm (Comprimento)
 
 O núcleo do projeto aborda o problema de empacotamento (semelhante ao "Bin Packing Problem") através de um algoritmo heurístico. Este algoritmo considera as dimensões 3D dos produtos e suas rotações para determinar o encaixe nas caixas pré-definidas, buscando otimizar o espaço e minimizar o número de caixas usadas por pedido através de uma estratégia de preenchimento baseada em volume e encaixe individual.
 
@@ -72,7 +73,7 @@ A maneira mais simples e recomendada para executar a aplicação é utilizando o
 1.  **Clone o repositório:**
 
     ```bash
-    git clone [https://github.com/kleyson13/LojaSeuManoel](https://github.com/kleyson13/LojaSeuManoel)
+    git clone https://github.com/kleyson13/LojaSeuManoel
     cd LojaSeuManoel
     ```
 
@@ -98,8 +99,8 @@ A maneira mais simples e recomendada para executar a aplicação é utilizando o
 
     - **API / Swagger UI:** `http://localhost:8088`
     - **Banco de Dados (SQL Server):** Acessível externamente em `localhost,14333` para ferramentas como SSMS ou Azure Data Studio.
-        - **Login:** `sa`
-        - **Senha:** A que você definiu no arquivo `.env`.
+      - **Login:** `sa`
+      - **Senha:** A que você definiu no arquivo `.env`.
 
 5.  **Parando a aplicação:**
     Para parar todos os containers, execute:
@@ -122,8 +123,8 @@ Você pode configurar esta chave no arquivo `appsettings.json` (no projeto `Loja
 ### Endpoint de Processamento
 
 - **`POST /api/pedidos`**
-    - Recebe um objeto JSON contendo uma lista de pedidos no corpo da requisição.
-    - Processa cada pedido e retorna um objeto JSON com os resultados do empacotamento.
+  - Recebe um objeto JSON contendo uma lista de pedidos no corpo da requisição.
+  - Processa cada pedido e retorna um objeto JSON com os resultados do empacotamento.
 
 ### Exemplo de Requisição (JSON)
 
@@ -135,44 +136,83 @@ Este é o formato esperado para o corpo da sua requisição `POST /api/pedidos`:
     {
       "pedido_id": 1,
       "produtos": [
-        {"produto_id": "PS5", "dimensoes": {"altura": 40, "largura": 10, "comprimento": 25}},
-        {"produto_id": "Volante", "dimensoes": {"altura": 40, "largura": 30, "comprimento": 30}}
+        {
+          "produto_id": "PS5",
+          "dimensoes": { "altura": 40, "largura": 10, "comprimento": 25 }
+        },
+        {
+          "produto_id": "Volante",
+          "dimensoes": { "altura": 40, "largura": 30, "comprimento": 30 }
+        }
       ]
     },
     {
       "pedido_id": 2,
       "produtos": [
-        {"produto_id": "Joystick", "dimensoes": {"altura": 15, "largura": 20, "comprimento": 10}},
-        {"produto_id": "Fifa 24", "dimensoes": {"altura": 10, "largura": 30, "comprimento": 10}},
-        {"produto_id": "Call of Duty", "dimensoes": {"altura": 30, "largura": 15, "comprimento": 10}}
+        {
+          "produto_id": "Joystick",
+          "dimensoes": { "altura": 15, "largura": 20, "comprimento": 10 }
+        },
+        {
+          "produto_id": "Fifa 24",
+          "dimensoes": { "altura": 10, "largura": 30, "comprimento": 10 }
+        },
+        {
+          "produto_id": "Call of Duty",
+          "dimensoes": { "altura": 30, "largura": 15, "comprimento": 10 }
+        }
       ]
     },
     {
       "pedido_id": 3,
       "produtos": [
-        {"produto_id": "Headset", "dimensoes": {"altura": 25, "largura": 15, "comprimento": 20}}
+        {
+          "produto_id": "Headset",
+          "dimensoes": { "altura": 25, "largura": 15, "comprimento": 20 }
+        }
       ]
     },
     {
       "pedido_id": 4,
       "produtos": [
-        {"produto_id": "Mouse Gamer", "dimensoes": {"altura": 5, "largura": 8, "comprimento": 12}},
-        {"produto_id": "Teclado Mecânico", "dimensoes": {"altura": 4, "largura": 45, "comprimento": 15}}
+        {
+          "produto_id": "Mouse Gamer",
+          "dimensoes": { "altura": 5, "largura": 8, "comprimento": 12 }
+        },
+        {
+          "produto_id": "Teclado Mecânico",
+          "dimensoes": { "altura": 4, "largura": 45, "comprimento": 15 }
+        }
       ]
     },
     {
       "pedido_id": 5,
       "produtos": [
-        {"produto_id": "Cadeira Gamer", "dimensoes": {"altura": 120, "largura": 60, "comprimento": 70}}
+        {
+          "produto_id": "Cadeira Gamer",
+          "dimensoes": { "altura": 120, "largura": 60, "comprimento": 70 }
+        }
       ]
     },
     {
       "pedido_id": 6,
       "produtos": [
-        {"produto_id": "Webcam", "dimensoes": {"altura": 7, "largura": 10, "comprimento": 5}},
-        {"produto_id": "Microfone", "dimensoes": {"altura": 25, "largura": 10, "comprimento": 10}},
-        {"produto_id": "Monitor", "dimensoes": {"altura": 50, "largura": 60, "comprimento": 20}},
-        {"produto_id": "Notebook", "dimensoes": {"altura": 2, "largura": 35, "comprimento": 25}}
+        {
+          "produto_id": "Webcam",
+          "dimensoes": { "altura": 7, "largura": 10, "comprimento": 5 }
+        },
+        {
+          "produto_id": "Microfone",
+          "dimensoes": { "altura": 25, "largura": 10, "comprimento": 10 }
+        },
+        {
+          "produto_id": "Monitor",
+          "dimensoes": { "altura": 50, "largura": 60, "comprimento": 20 }
+        },
+        {
+          "produto_id": "Notebook",
+          "dimensoes": { "altura": 2, "largura": 35, "comprimento": 25 }
+        }
       ]
     }
   ]
@@ -246,7 +286,8 @@ Este é o formato esperado para o corpo da sua requisição `POST /api/pedidos`:
   ]
 }
 ```
-*(Nota: A atribuição específica de produtos às caixas "Caixa 1", "Caixa 2", "Caixa 3" na resposta acima é um exemplo ilustrativo. O algoritmo determinará a melhor combinação com base nas dimensões dos produtos e das caixas disponíveis.)*
+
+_(Nota: A atribuição específica de produtos às caixas "Caixa 1", "Caixa 2", "Caixa 3" na resposta acima é um exemplo ilustrativo. O algoritmo determinará a melhor combinação com base nas dimensões dos produtos e das caixas disponíveis.)_
 
 ## Testes
 
