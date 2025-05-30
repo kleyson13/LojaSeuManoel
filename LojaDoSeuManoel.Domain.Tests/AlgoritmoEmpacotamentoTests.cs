@@ -120,16 +120,17 @@ public class AlgoritmoEmpacotamentoTests
     }
 
     [Fact]
-    public void EmbalarPedido_ProdutoMaiorQueTodasAsCaixas_DeveRetornarListaVaziaOuLancarExcecao()
+    public void EmbalarPedido_ProdutoMaiorQueTodasAsCaixas_DeveLancarInvalidOperationException()
     {
         var produtos = new List<Produto>
         {
             new Produto(new Dimensoes(100, 100, 100), "PROD_GIGANTE")
         };
-
         var algoritmo = new AlgoritmoEmpacotamento(_caixasDisponiveisPadrao);
-        var resultado = algoritmo.EmbalarPedido(produtos);
 
-        Assert.Empty(resultado);
+        var exception = Assert.Throws<InvalidOperationException>(() => algoritmo.EmbalarPedido(produtos));
+    
+        Assert.Contains("PROD_GIGANTE", exception.Message);
+        Assert.Contains("maior que todas as caixas disponíveis", exception.Message);
     }
 }
