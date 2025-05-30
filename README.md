@@ -259,5 +259,5 @@ A solução está organizada nas seguintes camadas/projetos:
 
 **Kleyson Mariano**
 
-- LinkedIn: `https://www.linkedin.com/in/kleyson-mariano/`
-- GitHub: `https://github.com/kleyson13`
+- Linkedin: [`linkedin.com/in/kleyson-mariano/`](https://www.linkedin.com/in/kleyson-mariano/)
+- GitHub: [`github.com/kleyson13`](https://github.com/kleyson13)

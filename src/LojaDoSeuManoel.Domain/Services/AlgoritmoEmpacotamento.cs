@@ -79,9 +79,8 @@ public class AlgoritmoEmpacotamento
             }
             else if (produtosNaoEmbalados.Any())
             {
-                Console.WriteLine($"AVISO: Não foi possível embalar {produtosNaoEmbalados.Count} produtos restantes. " +
-                                  $"O primeiro é: {produtosNaoEmbalados.FirstOrDefault()?.ProdutoId} com volume {produtosNaoEmbalados.FirstOrDefault()?.Dimensoes.VolumeCm3}");
-                break; 
+                var produtoProblematico = produtosNaoEmbalados.First();
+                throw new InvalidOperationException($"Não foi possível embalar o produto {produtoProblematico.ProdutoId} (Dimensões: {produtoProblematico.Dimensoes}) pois é maior que todas as caixas disponíveis.");
             }
         }
         return caixasEmbaladasResultado;
