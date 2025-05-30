@@ -6,7 +6,6 @@ COPY src/LojaDoSeuManoel.Application/LojaDoSeuManoel.Application.csproj ./src/Lo
 COPY src/LojaDoSeuManoel.Infrastructure/LojaDoSeuManoel.Infrastructure.csproj ./src/LojaDoSeuManoel.Infrastructure/
 COPY src/LojaDoSeuManoel.Api/LojaDoSeuManoel.Api.csproj ./src/LojaDoSeuManoel.Api/
 COPY LojaSeuManoel.sln ./
-RUN dotnet restore LojaSeuManoel.sln
 
 RUN dotnet restore ./src/LojaDoSeuManoel.Api/LojaDoSeuManoel.Api.csproj
 

@@ -1,42 +1,39 @@
-version: '3.8' # Especifica a versão do formato do arquivo docker-compose
+version: '3.8'
 
 services:
-  # Serviço da API
   loja-api:
     container_name: lojadoseumanoel-api
     build:
-      context: . # O contexto de build é o diretório atual (raiz da solução)
-      dockerfile: src/LojaDoSeuManoel.Api/Dockerfile # Caminho para o seu Dockerfile
+      context: .
+      dockerfile: src/LojaDoSeuManoel.Api/Dockerfile
     ports:
-      - "8088:8080" # Mapeia a porta 8088 da sua máquina para a porta 8080 do container da API
-      # - "7088:8081" # Se fosse usar HTTPS, mapearia para a porta HTTPS exposta
+      - "8088:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=http://+:8080 # Garante que o Kestrel escute em todas as interfaces na porta 8080 dentro do container
+      - ASPNETCORE_URLS=http://+:8080
       - ConnectionStrings__DefaultConnection=Server=lojadb;Database=LojaDoSeuManoelDB_Docker;User ID=sa;Password=${SA_PASSWORD};TrustServerCertificate=True;MultipleActiveResultSets=true;
     depends_on:
-      - lojadb # Diz ao Docker Compose para iniciar o serviço 'lojadb' antes deste
+      - lojadb
     networks:
       - lojanet
 
-  # Serviço do SQL Server
   lojadb:
     container_name: lojadoseumanoel-db
-    image: "mcr.microsoft.com/mssql/server:2022-latest" # Imagem oficial do SQL Server 2022
+    image: "mcr.microsoft.com/mssql/server:2022-latest"
     ports:
-      - "14333:1433" # Mapeia a porta 14333 da sua máquina para a porta 1433 do container do SQL Server
+      - "14333:1433"
     environment:
-      SA_PASSWORD: "${SA_PASSWORD}" # Usa uma variável de ambiente para a senha do SA
-      ACCEPT_EULA: "Y" # Aceita os termos de licença do SQL Server
-      MSSQL_PID: "Developer" # Opcional: define a edição (Developer é gratuita para desenvolvimento)
+      SA_PASSWORD: "${SA_PASSWORD}"
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: "Developer"
     volumes:
-      - lojadb_data:/var/opt/mssql # Persiste os dados do banco em um volume nomeado
+      - lojadb_data:/var/opt/mssql
     networks:
       - lojanet
 
 volumes:
-  lojadb_data: # Define o volume nomeado para os dados do SQL Server
+  lojadb_data:
 
 networks:
-  lojanet: # Define uma rede customizada para os containers se comunicarem
+  lojanet:
     driver: bridge

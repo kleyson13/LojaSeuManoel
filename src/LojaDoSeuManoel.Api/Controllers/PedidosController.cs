@@ -1,11 +1,15 @@
-﻿using LojaDoSeuManoel.Application.DTOs;
+﻿using Microsoft.AspNetCore.Mvc;
+using LojaDoSeuManoel.Application.DTOs;
 using LojaDoSeuManoel.Application.Services;
-using Microsoft.AspNetCore.Mvc;
+using LojaDoSeuManoel.Api.Security;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace LojaDoSeuManoel.Api.Controllers;
 
 [Route("api/pedidos")]
 [ApiController]
+[ApiKeyAuth]
 public class PedidosController : ControllerBase
 {
     private readonly IPackingService _packingService;
