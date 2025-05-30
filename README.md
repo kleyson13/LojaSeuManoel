@@ -4,6 +4,7 @@
 [![Docker](https://img.shields.io/badge/Docker-Compose-blue)](https://docs.docker.com/compose/)
 [![SQL Server](https://img.shields.io/badge/SQL_Server-2022-red)](https://www.microsoft.com/en-us/sql-server/sql-server-2022)
 [![xUnit](https://img.shields.io/badge/Tests-xUnit-green)](https://xunit.net/)
+[![Auth: JWT](https://img.shields.io/badge/Auth-JWT-brightgreen)](https://jwt.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 Este projeto é uma solução para o desafio técnico "Loja do Seu Manoel", que consiste em desenvolver uma API para otimizar o processo de embalagem de pedidos. A API recebe uma lista de pedidos com produtos e suas dimensões e retorna a melhor forma de empacotá-los, minimizando o número de caixas utilizadas.
@@ -46,6 +47,7 @@ O projeto foi desenvolvido seguindo os princípios da **Clean Architecture**, se
 - **Containerização:** Docker e Docker Compose
 - **Testes:** xUnit
 - **Documentação da API:** Swagger (OpenAPI)
+- **Autenticação:** JWT (JSON Web Tokens)
 
 ## Funcionalidades
 
@@ -53,7 +55,7 @@ O projeto foi desenvolvido seguindo os princípios da **Clean Architecture**, se
 - [✔] Algoritmo de otimização para minimizar o número de caixas, considerando rotação de produtos.
 - [✔] Persistência dos resultados do processamento em banco de dados.
 - [✔] Documentação interativa da API com Swagger.
-- [✔] Segurança de acesso via API Key.
+- [✔] Segurança de acesso via autenticação JWT Bearer.
 - [✔] Cobertura de testes unitários para a lógica de negócio principal.
 - [✔] Ambiente de desenvolvimento e produção totalmente containerizado.
 - [✔] Tratamento de produtos que não cabem em nenhuma caixa disponível.
@@ -73,19 +75,27 @@ A maneira mais simples e recomendada para executar a aplicação é utilizando o
 1.  **Clone o repositório:**
 
     ```bash
-    git clone https://github.com/kleyson13/LojaSeuManoel
+    git clone [https://github.com/kleyson13/LojaSeuManoel](https://github.com/kleyson13/LojaSeuManoel)
     cd LojaSeuManoel
     ```
 
-2.  **Crie o arquivo de ambiente:**
-    Na raiz do projeto, crie um arquivo chamado `.env`. Este arquivo guardará a senha do banco de dados.
+2.  **Crie e configure o arquivo de ambiente (`.env`):**
+    Na raiz do projeto, crie um arquivo chamado `.env`. Este arquivo guardará senhas e chaves secretas. Substitua os valores de exemplo pelos seus.
 
     ```env
     # .env
-    SA_PASSWORD=SuaSenhaForte(!@#)
+    SA_PASSWORD=SuaSenhaForteParaOBanco(!@#)
+
+    # Configurações do JWT (substitua por valores seguros e adequados)
+    JWT_KEY=SUA_CHAVE_SECRETA_SUPER_LONGA_E_COMPLEXA_PARA_JWT_AQUI_COM_PELO_MENOS_32_CARACTERES
+    JWT_ISSUER=LojaDoSeuManoel.Api
+    JWT_AUDIENCE=LojaDoSeuManoel.Usuarios
     ```
 
-    **Importante:** Adicione o arquivo `.env` ao seu `.gitignore` para não expor senhas no repositório.
+    **Importante:**
+
+    - A `JWT_KEY` deve ser uma string longa, aleatória e secreta.
+    - Adicione o arquivo `.env` ao seu `.gitignore` para não expor senhas e chaves no repositório.
 
 3.  **Execute o Docker Compose:**
     No seu terminal, na raiz do projeto, execute o comando abaixo. Ele irá construir as imagens e iniciar os containers em segundo plano.
@@ -97,10 +107,10 @@ A maneira mais simples e recomendada para executar a aplicação é utilizando o
 4.  **Acesse a API:**
     Após a conclusão do comando, a aplicação estará disponível:
 
-    - **API / Swagger UI:** `http://localhost:8088`
+    - **API / Swagger UI:** `http://localhost:8088` (ou a porta que você definiu no `docker-compose.yml`)
     - **Banco de Dados (SQL Server):** Acessível externamente em `localhost,14333` para ferramentas como SSMS ou Azure Data Studio.
       - **Login:** `sa`
-      - **Senha:** A que você definiu no arquivo `.env`.
+      - **Senha:** A que você definiu para `SA_PASSWORD` no arquivo `.env`.
 
 5.  **Parando a aplicação:**
     Para parar todos os containers, execute:
@@ -112,17 +122,48 @@ A maneira mais simples e recomendada para executar a aplicação é utilizando o
 
 ### Autenticação
 
-A API utiliza um esquema de autenticação por **API Key**. Todas as requisições para os endpoints protegidos devem conter o seguinte header HTTP:
+A API utiliza autenticação baseada em **JWT (JSON Web Tokens)**. Para acessar os endpoints protegidos, você primeiro precisa obter um token.
 
-| Header      | Valor                         |
-| ----------- | ----------------------------- |
-| `X-API-Key` | `SecretKeyAPIL2Code(!@#)2025` |
+1.  **Obter um Token JWT:**
+    Faça uma requisição `POST` para o endpoint `/api/auth/login` com as seguintes credenciais de teste no corpo (JSON):
 
-Você pode configurar esta chave no arquivo `appsettings.json` (no projeto `LojaDoSeuManoel.Api`) ou via variáveis de ambiente. Para usar o Swagger, clique no botão "Authorize" e insira a chave.
+    ```json
+    {
+      "username": "testeuser",
+      "password": "Password123!"
+    }
+    ```
+
+    _(Nota: Estas credenciais de teste estão configuradas no `appsettings.Development.json` da API apenas para fins de demonstração. A chave, emissor e audiência do JWT são lidos do arquivo `.env` quando rodando via Docker Compose, ou do `appsettings.Development.json` para execução local direta)._
+
+    A resposta será um JSON contendo o token e sua data de expiração:
+
+    ```json
+    {
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0ZXVzZXIiLCJqdGkiOiJjZTQxYjJlMy1mMzgzLTRkY2ItYWE5NS0xYjRkMGUzNDY4YjEiLCJleHAiOjE3MTcwODAwMDAsImlzcyI6IkxvSmFEb1NldU1hbm9lbC5BcGkiLCJhdWQiOiJMb2phRG9TZXVNYW5vZWwuVXN1YXJpb3MifQ.xxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "expiration": "2025-05-30T18:00:00Z",
+      "username": "testeuser"
+    }
+    ```
+
+    _(O token e a data de expiração acima são apenas exemplos.)_
+
+2.  **Usar o Token:**
+    Para todas as requisições subsequentes aos endpoints protegidos (como `/api/pedidos`), inclua o token obtido no header HTTP `Authorization` usando o esquema `Bearer`:
+
+    | Header          | Valor                                            |
+    | --------------- | ------------------------------------------------ |
+    | `Authorization` | `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...` |
+
+    **No Swagger UI:**
+
+    - Clique no botão "Authorize" no topo da página.
+    - Na janela que abrir, no campo de definição de segurança "Bearer (apiKey)", cole o token JWT completo que você obteve, **prefixado com `Bearer `** (ex: `Bearer eyJhbGciOiJ...`).
+    - Clique em "Authorize" e depois em "Close". As requisições subsequentes aos endpoints protegidos incluirão este token.
 
 ### Endpoint de Processamento
 
-- **`POST /api/pedidos`**
+- **`POST /api/pedidos`** (Requer Autenticação JWT)
   - Recebe um objeto JSON contendo uma lista de pedidos no corpo da requisição.
   - Processa cada pedido e retorna um objeto JSON com os resultados do empacotamento.
 
@@ -164,54 +205,11 @@ Este é o formato esperado para o corpo da sua requisição `POST /api/pedidos`:
       ]
     },
     {
-      "pedido_id": 3,
-      "produtos": [
-        {
-          "produto_id": "Headset",
-          "dimensoes": { "altura": 25, "largura": 15, "comprimento": 20 }
-        }
-      ]
-    },
-    {
-      "pedido_id": 4,
-      "produtos": [
-        {
-          "produto_id": "Mouse Gamer",
-          "dimensoes": { "altura": 5, "largura": 8, "comprimento": 12 }
-        },
-        {
-          "produto_id": "Teclado Mecânico",
-          "dimensoes": { "altura": 4, "largura": 45, "comprimento": 15 }
-        }
-      ]
-    },
-    {
       "pedido_id": 5,
       "produtos": [
         {
           "produto_id": "Cadeira Gamer",
           "dimensoes": { "altura": 120, "largura": 60, "comprimento": 70 }
-        }
-      ]
-    },
-    {
-      "pedido_id": 6,
-      "produtos": [
-        {
-          "produto_id": "Webcam",
-          "dimensoes": { "altura": 7, "largura": 10, "comprimento": 5 }
-        },
-        {
-          "produto_id": "Microfone",
-          "dimensoes": { "altura": 25, "largura": 10, "comprimento": 10 }
-        },
-        {
-          "produto_id": "Monitor",
-          "dimensoes": { "altura": 50, "largura": 60, "comprimento": 20 }
-        },
-        {
-          "produto_id": "Notebook",
-          "dimensoes": { "altura": 2, "largura": 35, "comprimento": 25 }
         }
       ]
     }
@@ -243,43 +241,12 @@ Este é o formato esperado para o corpo da sua requisição `POST /api/pedidos`:
       ]
     },
     {
-      "pedido_id": 3,
-      "caixas": [
-        {
-          "caixa_id": "Caixa 1",
-          "produtos": ["Headset"]
-        }
-      ]
-    },
-    {
-      "pedido_id": 4,
-      "caixas": [
-        {
-          "caixa_id": "Caixa 1",
-          "produtos": ["Mouse Gamer", "Teclado Mecânico"]
-        }
-      ]
-    },
-    {
       "pedido_id": 5,
       "caixas": [
         {
           "caixa_id": null,
           "produtos": ["Cadeira Gamer"],
           "observacao": "Produto(s) não cabe(m) em nenhuma caixa disponível."
-        }
-      ]
-    },
-    {
-      "pedido_id": 6,
-      "caixas": [
-        {
-          "caixa_id": "Caixa 3",
-          "produtos": ["Monitor", "Notebook"]
-        },
-        {
-          "caixa_id": "Caixa 1",
-          "produtos": ["Webcam", "Microfone"]
         }
       ]
     }

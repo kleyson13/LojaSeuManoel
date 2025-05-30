@@ -12,6 +12,9 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080
       - ConnectionStrings__DefaultConnection=Server=lojadb;Database=LojaDoSeuManoelDB_Docker;User ID=sa;Password=${SA_PASSWORD};TrustServerCertificate=True;MultipleActiveResultSets=true;
+      - Authentication__Jwt__Key=${JWT_KEY}
+      - Authentication__Jwt__Issuer=${JWT_ISSUER}
+      - Authentication__Jwt__Audience=${JWT_AUDIENCE}
     depends_on:
       - lojadb
     networks:

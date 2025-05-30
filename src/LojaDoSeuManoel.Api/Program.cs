@@ -1,6 +1,10 @@
 using LojaDoSeuManoel.Application.Services;
 using LojaDoSeuManoel.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,28 +18,72 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<IPackingService, PackingService>();
 
 builder.Services.AddControllers();
+
+var jwtKey = builder.Configuration["Authentication:Jwt:Key"];
+if (string.IsNullOrEmpty(jwtKey) || jwtKey.Length < 32)
+{
+    throw new InvalidOperationException("A chave JWT (Authentication:Jwt:Key) não está configurada corretamente no appsettings.json ou é muito curta (precisa de pelo menos 32 caracteres).");
+}
+var key = Encoding.ASCII.GetBytes(jwtKey);
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.RequireHttpsMetadata = builder.Environment.IsProduction();
+    options.SaveToken = true;
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(key),
+        ValidateIssuer = true,
+        ValidIssuer = builder.Configuration["Authentication:Jwt:Issuer"],
+        ValidateAudience = true,
+        ValidAudience = builder.Configuration["Authentication:Jwt:Audience"],
+        ValidateLifetime = true,
+        ClockSkew = TimeSpan.Zero
+    };
+});
+
+builder.Services.AddAuthorization();
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
-    options.AddSecurityDefinition("ApiKey", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    options.SwaggerDoc("v1", new OpenApiInfo
     {
-        Description = "API Key necessária para autenticação",
-        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
-        Name = "X-API-Key",
-        Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
-        Scheme = "ApiKeyScheme"
+        Title = "Loja do Seu Manoel - API de Embalagens",
+        Version = "v1",
+        Description = "API para determinar a melhor forma de embalar produtos em caixas."
     });
-    options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = @"Autenticação JWT usando o esquema Bearer.
+                      Entre com 'Bearer' [espaço] e então seu token no input de texto abaixo.
+                      Exemplo: 'Bearer 12345abcdef'",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement()
     {
         {
-            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            new OpenApiSecurityScheme
             {
-                Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                Reference = new OpenApiReference
                 {
-                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
-                    Id = "ApiKey"
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
                 },
-                In = Microsoft.OpenApi.Models.ParameterLocation.Header
+                Scheme = "oauth2",
+                Name = "Bearer",
+                In = ParameterLocation.Header,
             },
             new List<string>()
         }
@@ -69,6 +117,11 @@ if (app.Environment.IsDevelopment())
     });
 }
 
+app.UseRouting();
+
+app.UseAuthentication();
 app.UseAuthorization();
+
 app.MapControllers();
+
 app.Run();
