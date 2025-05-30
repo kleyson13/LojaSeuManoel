@@ -2,11 +2,11 @@
 
 namespace LojaDoSeuManoel.Application.DTOs;
 
-public class PedidoRequestDto
+public class PedidoProcessadoResponseDto
 {
     [JsonPropertyName("pedido_id")]
     public int PedidoId { get; set; }
 
-    [JsonPropertyName("produtos")]
-    public List<ProdutoRequestDto> Produtos { get; set; } = new();
+    [JsonPropertyName("caixas")]
+    public List<CaixaEmpacotadaResponseDto> Caixas { get; set; } = new();
 }

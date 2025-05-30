@@ -1,4 +1,5 @@
 ﻿using LojaDoSeuManoel.Domain.Entities;
+using LojaDoSeuManoel.Domain.Results;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -10,79 +11,81 @@ public class AlgoritmoEmpacotamento
 
     public AlgoritmoEmpacotamento(List<DefinicaoCaixa> caixasDisponiveis)
     {
-        _caixasDisponiveis = caixasDisponiveis.OrderBy(c => c.Dimensoes.VolumeCm3).ToList();
+        _caixasDisponiveis = caixasDisponiveis
+            .OrderBy(c => c.Dimensoes.VolumeCm3)
+            .ToList();
+
         if (!_caixasDisponiveis.Any())
         {
             throw new ArgumentException("A lista de caixas disponíveis não pode ser vazia.", nameof(caixasDisponiveis));
         }
     }
-    public List<CaixaEmbalada> EmbalarPedido(List<Produto> produtosDoPedido)
+
+    public ResultadoEmpacotamentoPedido EmbalarPedido(List<Produto> produtosDoPedido)
     {
-        var caixasEmbaladasResultado = new List<CaixaEmbalada>();
-        var produtosNaoEmbalados = produtosDoPedido
-            .OrderByDescending(p => p.Dimensoes.VolumeCm3) 
+        var resultado = new ResultadoEmpacotamentoPedido();
+        
+        var produtosAindaPorEmbalar = produtosDoPedido
+            .OrderByDescending(p => p.Dimensoes.VolumeCm3)
             .ToList();
 
-        while (produtosNaoEmbalados.Any())
+        while (produtosAindaPorEmbalar.Any())
         {
-            CaixaEmbalada? melhorCaixaParaRodada = null;
-            List<Produto>? produtosNaMelhorCaixaDaRodada = null;
+            var produtoPrincipalDaRodada = produtosAindaPorEmbalar.First();
 
-            var produtoPrincipalDaRodada = produtosNaoEmbalados.First();
+            CaixaEmbalada? caixaEscolhidaParaEstaRodada = null;
+            List<Produto> produtosEmbaladosNestaRodada = new List<Produto>();
+            bool produtoPrincipalPodeSerEmbalado = false;
 
             foreach (var tipoCaixa in _caixasDisponiveis)
             {
                 if (tipoCaixa.PodeConterProduto(produtoPrincipalDaRodada))
                 {
+                    produtoPrincipalPodeSerEmbalado = true;
                     var caixaAtual = new CaixaEmbalada(tipoCaixa);
-                    var produtosAdicionadosNestaCaixa = new List<Produto>();
-
+                    
                     caixaAtual.AdicionarProduto(produtoPrincipalDaRodada);
-                    produtosAdicionadosNestaCaixa.Add(produtoPrincipalDaRodada);
-
-                    var produtosRestantesParaTentar = produtosNaoEmbalados
-                        .Except(new List<Produto> { produtoPrincipalDaRodada })
-                        .OrderByDescending(p => p.Dimensoes.VolumeCm3)
-                        .ToList();
-
+                    produtosEmbaladosNestaRodada.Add(produtoPrincipalDaRodada);
+                    
                     double volumeUsadoNaCaixaAtual = produtoPrincipalDaRodada.Dimensoes.VolumeCm3;
 
-                    foreach (var pAdicional in produtosRestantesParaTentar)
+                    var outrosProdutosParaTentar = produtosAindaPorEmbalar
+                        .Except(new List<Produto> { produtoPrincipalDaRodada })
+                        .OrderByDescending(p => p.Dimensoes.VolumeCm3) 
+                        .ToList();
+
+                    foreach (var produtoAdicional in outrosProdutosParaTentar)
                     {
-                        if (tipoCaixa.PodeConterProduto(pAdicional) && 
-                            (volumeUsadoNaCaixaAtual + pAdicional.Dimensoes.VolumeCm3) <= tipoCaixa.Dimensoes.VolumeCm3)
+                        if (tipoCaixa.PodeConterProduto(produtoAdicional) &&
+                            (volumeUsadoNaCaixaAtual + produtoAdicional.Dimensoes.VolumeCm3) <= tipoCaixa.Dimensoes.VolumeCm3)
                         {
-                            caixaAtual.AdicionarProduto(pAdicional);
-                            produtosAdicionadosNestaCaixa.Add(pAdicional);
-                            volumeUsadoNaCaixaAtual += pAdicional.Dimensoes.VolumeCm3;
+                            caixaAtual.AdicionarProduto(produtoAdicional);
+                            produtosEmbaladosNestaRodada.Add(produtoAdicional);
+                            volumeUsadoNaCaixaAtual += produtoAdicional.Dimensoes.VolumeCm3;
                         }
                     }
-
-                    if (produtosAdicionadosNestaCaixa.Any()) {
-                        melhorCaixaParaRodada = new CaixaEmbalada(tipoCaixa);
-                        foreach(var p in produtosAdicionadosNestaCaixa) {
-                            melhorCaixaParaRodada.Produtos.Add(p);
-                        }
-                        produtosNaMelhorCaixaDaRodada = new List<Produto>(produtosAdicionadosNestaCaixa);
-                        break;
-                    }
+                    
+                    caixaEscolhidaParaEstaRodada = caixaAtual;
+                    break;
                 }
             }
 
-            if (melhorCaixaParaRodada != null && produtosNaMelhorCaixaDaRodada != null && produtosNaMelhorCaixaDaRodada.Any())
+            if (produtoPrincipalPodeSerEmbalado && caixaEscolhidaParaEstaRodada != null)
             {
-                caixasEmbaladasResultado.Add(melhorCaixaParaRodada);
-                foreach (var produtoEmbalado in produtosNaMelhorCaixaDaRodada)
+                resultado.CaixasUtilizadas.Add(caixaEscolhidaParaEstaRodada);
+                foreach (var produtoEmbalado in produtosEmbaladosNestaRodada)
                 {
-                    produtosNaoEmbalados.Remove(produtoEmbalado);
+                    produtosAindaPorEmbalar.Remove(produtoEmbalado);
                 }
             }
-            else if (produtosNaoEmbalados.Any())
+            else
             {
-                var produtoProblematico = produtosNaoEmbalados.First();
-                throw new InvalidOperationException($"Não foi possível embalar o produto {produtoProblematico.ProdutoId} (Dimensões: {produtoProblematico.Dimensoes}) pois é maior que todas as caixas disponíveis.");
+                resultado.ProdutosNaoEmbalados.Add(produtoPrincipalDaRodada);
+                produtosAindaPorEmbalar.Remove(produtoPrincipalDaRodada);
+                Console.WriteLine($"AVISO ALGORITMO: Produto {produtoPrincipalDaRodada.ProdutoId} (Dimensões: {produtoPrincipalDaRodada.Dimensoes}) não coube em nenhuma caixa e foi adicionado à lista de não embalados.");
             }
         }
-        return caixasEmbaladasResultado;
+
+        return resultado;
     }
 }
