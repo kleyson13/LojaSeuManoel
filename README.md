@@ -75,7 +75,7 @@ A maneira mais simples e recomendada para executar a aplicação é utilizando o
 1.  **Clone o repositório:**
 
     ```bash
-    git clone [https://github.com/kleyson13/LojaSeuManoel](https://github.com/kleyson13/LojaSeuManoel)
+    git clone https://github.com/kleyson13/LojaSeuManoel
     cd LojaSeuManoel
     ```
 
